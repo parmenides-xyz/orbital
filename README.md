@@ -1,6 +1,6 @@
 # Orbital
 
-This repository contains the core smart contracts for Orbital, automated market maker for pools of 2, 3, or 10,000 stablecoins.
+This repository contains the core smart contracts for Orbital, an automated market maker for pools of 2, 3, or 10,000 stablecoins.
 
 ## Local deployment
 
