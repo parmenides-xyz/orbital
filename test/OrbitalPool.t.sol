@@ -3,8 +3,8 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "./ERC20Mintable.sol";
-import "../src/OrbitalPool.sol";
-import "../src/OrbitalFactory.sol";
+import "../contracts/OrbitalPool.sol";
+import "../contracts/OrbitalFactory.sol";
 
 contract OrbitalPoolTest is Test {
     ERC20Mintable token0;
