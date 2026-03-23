@@ -11,14 +11,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract MockStablecoin is ERC20, Ownable {
     uint8 private immutable _decimals;
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimalsValue
-    ) ERC20(name, symbol) Ownable(msg.sender) {
+    constructor(string memory name, string memory symbol, uint8 decimalsValue) ERC20(name, symbol) Ownable(msg.sender) {
         _decimals = decimalsValue;
         // Mint initial supply to deployer
-        _mint(msg.sender, 1_000_000 * 10**decimalsValue);
+        _mint(msg.sender, 1_000_000 * 10 ** decimalsValue);
     }
 
     function decimals() public view virtual override returns (uint8) {
@@ -38,7 +34,7 @@ contract MockStablecoin is ERC20, Ownable {
      * Mints 10,000 tokens to the caller
      */
     function faucet() external {
-        uint256 amount = 10_000 * 10**uint256(_decimals);
+        uint256 amount = 10_000 * 10 ** uint256(_decimals);
         _mint(msg.sender, amount);
     }
 

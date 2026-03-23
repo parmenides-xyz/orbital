@@ -50,42 +50,31 @@ contract OrbitalManager {
 
     // ============ Mint Functions ============
 
-    function mint(MintParams calldata params)
-        public
-        returns (uint256[] memory amounts)
-    {
+    function mint(MintParams calldata params) public returns (uint256[] memory amounts) {
         uint128 radius = OrbitalMath.calcRadiusForAmounts(params.amountsDesired);
 
-        amounts = OrbitalPool(params.poolAddress).mint(
-            msg.sender,
-            params.tick,
-            radius,
-            abi.encode(CallbackData({pool: params.poolAddress, payer: msg.sender}))
-        );
+        amounts = OrbitalPool(params.poolAddress)
+            .mint(
+                msg.sender, params.tick, radius, abi.encode(CallbackData({pool: params.poolAddress, payer: msg.sender}))
+            );
 
         for (uint256 i = 0; i < amounts.length; i++) {
-            if (amounts[i] < params.amountsMin[i])
+            if (amounts[i] < params.amountsMin[i]) {
                 revert SlippageCheckFailed(amounts);
+            }
         }
     }
 
     // ============ Swap Functions ============
 
     /// @notice Swap tokens within a single pool
-    function swapSingle(SwapSingleParams calldata params)
-        public
-        returns (uint256 amountOut)
-    {
+    function swapSingle(SwapSingleParams calldata params) public returns (uint256 amountOut) {
         amountOut = _swap(
             params.amountIn,
             msg.sender,
             params.sumReservesLimit,
             SwapCallbackData({
-                path: bytes.concat(
-                    bytes20(params.tokenIn),
-                    bytes20(params.poolAddress),
-                    bytes20(params.tokenOut)
-                ),
+                path: bytes.concat(bytes20(params.tokenIn), bytes20(params.poolAddress), bytes20(params.tokenOut)),
                 payer: msg.sender
             })
         );
@@ -105,10 +94,7 @@ contract OrbitalManager {
                 params.amountIn,
                 hasMultiplePools ? address(this) : params.recipient,
                 0, // No sumReservesLimit for multi-pool (use minAmountOut instead)
-                SwapCallbackData({
-                    path: params.path.getFirstPool(),
-                    payer: payer
-                })
+                SwapCallbackData({path: params.path.getFirstPool(), payer: payer})
             );
 
             if (hasMultiplePools) {
@@ -122,17 +108,16 @@ contract OrbitalManager {
         }
 
         // Slippage protection for multi-pool swaps
-        if (amountOut < params.minAmountOut)
+        if (amountOut < params.minAmountOut) {
             revert TooLittleReceived(amountOut);
+        }
     }
 
     /// @notice Internal swap function used by both single and multi-pool swaps
-    function _swap(
-        uint256 amountIn,
-        address recipient,
-        uint128 sumReservesLimit,
-        SwapCallbackData memory data
-    ) internal returns (uint256 amountOut) {
+    function _swap(uint256 amountIn, address recipient, uint128 sumReservesLimit, SwapCallbackData memory data)
+        internal
+        returns (uint256 amountOut)
+    {
         // Decode path to get pool and tokens
         (address tokenIn, address pool, address tokenOut) = data.path.decodeFirstPool();
 
@@ -142,14 +127,8 @@ contract OrbitalManager {
         uint256 tokenOutIndex = findTokenIndex(orbitalPool, tokenOut);
 
         // Execute swap
-        (, int256 amountOutResult) = orbitalPool.swap(
-            recipient,
-            tokenInIndex,
-            tokenOutIndex,
-            amountIn,
-            sumReservesLimit,
-            abi.encode(data)
-        );
+        (, int256 amountOutResult) =
+            orbitalPool.swap(recipient, tokenInIndex, tokenOutIndex, amountIn, sumReservesLimit, abi.encode(data));
 
         // amountOut is negative (tokens leaving pool)
         amountOut = uint256(-amountOutResult);
@@ -166,31 +145,29 @@ contract OrbitalManager {
 
     // ============ Callbacks ============
 
-    function orbitalMintCallback(
-        uint256[] memory amounts,
-        bytes calldata data
-    ) public {
+    function orbitalMintCallback(uint256[] memory amounts, bytes calldata data) public {
         CallbackData memory extra = abi.decode(data, (CallbackData));
         OrbitalPool pool = OrbitalPool(extra.pool);
 
         for (uint256 i = 0; i < amounts.length; i++) {
-            IERC20(pool.tokens(i)).transferFrom(
-                extra.payer,
-                msg.sender,
-                amounts[i]
-            );
+            IERC20(pool.tokens(i)).transferFrom(extra.payer, msg.sender, amounts[i]);
         }
     }
 
     function orbitalSwapCallback(
-        uint256 /* tokenInIndex */,
-        uint256 /* tokenOutIndex */,
+        uint256,
+        /* tokenInIndex */
+        uint256,
+        /* tokenOutIndex */
         int256 amountIn,
-        int256 /* amountOut */,
+        int256,
+        /* amountOut */
         bytes calldata data
-    ) public {
+    )
+        public
+    {
         SwapCallbackData memory swapData = abi.decode(data, (SwapCallbackData));
-        (address tokenIn, , ) = swapData.path.decodeFirstPool();
+        (address tokenIn,,) = swapData.path.decodeFirstPool();
 
         if (amountIn > 0) {
             if (swapData.payer == address(this)) {
@@ -198,11 +175,7 @@ contract OrbitalManager {
                 IERC20(tokenIn).transfer(msg.sender, uint256(amountIn));
             } else {
                 // First swap: transfer from user's balance
-                IERC20(tokenIn).transferFrom(
-                    swapData.payer,
-                    msg.sender,
-                    uint256(amountIn)
-                );
+                IERC20(tokenIn).transferFrom(swapData.payer, msg.sender, uint256(amountIn));
             }
         }
     }

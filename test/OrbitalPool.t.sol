@@ -46,10 +46,7 @@ contract OrbitalPoolTest is Test {
         revert("Token not found in pool");
     }
 
-    function setupTestCase(TestCaseParams memory params)
-        internal
-        returns (uint256[] memory poolBalances)
-    {
+    function setupTestCase(TestCaseParams memory params) internal returns (uint256[] memory poolBalances) {
         token0.mint(address(this), params.token0Balance);
         token1.mint(address(this), params.token1Balance);
         token2.mint(address(this), params.token2Balance);
@@ -70,19 +67,16 @@ contract OrbitalPoolTest is Test {
         shouldTransferInCallback = params.shouldTransferInCallback;
 
         if (params.mintLiquidity) {
-            poolBalances = pool.mint(
-                address(this),
-                params.tick,
-                params.radius,
-                ""
-            );
+            poolBalances = pool.mint(address(this), params.tick, params.radius, "");
         }
     }
 
     function orbitalMintCallback(
         uint256[] memory amounts,
         bytes calldata /* data */
-    ) public {
+    )
+        public
+    {
         if (shouldTransferInCallback) {
             token0.transfer(msg.sender, amounts[0]);
             token1.transfer(msg.sender, amounts[1]);
@@ -100,7 +94,7 @@ contract OrbitalPoolTest is Test {
             currentTick: 0,
             tick: 2000,
             radius: 1000e18,
-            currentSumReserves: 0,  // Pool starts empty, mint will add tokens
+            currentSumReserves: 0, // Pool starts empty, mint will add tokens
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
@@ -121,9 +115,7 @@ contract OrbitalPoolTest is Test {
         assertEq(token3.balanceOf(address(pool)), expectedAmount);
 
         // Check position (keyed by owner, tick)
-        bytes32 positionKey = keccak256(
-            abi.encodePacked(address(this), params.tick)
-        );
+        bytes32 positionKey = keccak256(abi.encodePacked(address(this), params.tick));
         (uint128 posRadius,,) = pool.positions(positionKey);
         assertEq(posRadius, params.radius, "incorrect position radius");
 
@@ -151,7 +143,7 @@ contract OrbitalPoolTest is Test {
             currentTick: 0,
             tick: 2000,
             radius: 1000e18,
-            currentSumReserves: 0,  // Pool starts empty, mint will add tokens
+            currentSumReserves: 0, // Pool starts empty, mint will add tokens
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
@@ -184,22 +176,12 @@ contract OrbitalPoolTest is Test {
         assertTrue(amountOut < 0, "amountOut should be negative");
 
         // Check user balances
-        assertEq(
-            token0.balanceOf(address(this)),
-            userBalance0Before - uint256(amountIn),
-            "invalid user USDC balance"
-        );
-        assertEq(
-            token1.balanceOf(address(this)),
-            userBalance1Before + uint256(-amountOut),
-            "invalid user USDT balance"
-        );
+        assertEq(token0.balanceOf(address(this)), userBalance0Before - uint256(amountIn), "invalid user USDC balance");
+        assertEq(token1.balanceOf(address(this)), userBalance1Before + uint256(-amountOut), "invalid user USDT balance");
 
         // Check pool balances (use correct indices after sorting)
         assertEq(
-            token0.balanceOf(address(pool)),
-            poolBalances[tokenInIndex] + uint256(amountIn),
-            "invalid pool USDC balance"
+            token0.balanceOf(address(pool)), poolBalances[tokenInIndex] + uint256(amountIn), "invalid pool USDC balance"
         );
         assertEq(
             token1.balanceOf(address(pool)),
@@ -221,11 +203,15 @@ contract OrbitalPoolTest is Test {
 
     function orbitalSwapCallback(
         uint256 tokenInIndex,
-        uint256 /* tokenOutIndex */,
+        uint256,
+        /* tokenOutIndex */
         int256 amountIn,
-        int256 /* amountOut */,
+        int256,
+        /* amountOut */
         bytes calldata /* data */
-    ) public {
+    )
+        public
+    {
         if (amountIn > 0) {
             // Transfer the token at the correct index (tokens are sorted in pool)
             ERC20Mintable(pool.tokens(tokenInIndex)).transfer(msg.sender, uint256(amountIn));
@@ -344,7 +330,7 @@ contract OrbitalPoolTest is Test {
             currentTick: 0,
             tick: 2000,
             radius: 1000e18,
-            currentSumReserves: 0,  // Pool starts empty
+            currentSumReserves: 0, // Pool starts empty
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
@@ -370,7 +356,7 @@ contract OrbitalPoolTest is Test {
         assertEq(amounts[3], expectedPerToken, "incorrect burn amount token3");
 
         // Check position was reduced
-        (uint128 posAfter, , uint128 tokensOwed) = pool.positions(positionKey);
+        (uint128 posAfter,, uint128 tokensOwed) = pool.positions(positionKey);
         assertEq(posAfter, params.radius - burnAmount, "position radius should be 500e18");
 
         // Check tokensOwed was updated (4 tokens * expectedPerToken)
@@ -396,7 +382,7 @@ contract OrbitalPoolTest is Test {
             currentTick: 0,
             tick: 2000,
             radius: 1000e18,
-            currentSumReserves: 0,  // Pool starts empty
+            currentSumReserves: 0, // Pool starts empty
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
@@ -408,7 +394,7 @@ contract OrbitalPoolTest is Test {
 
         // Check tokensOwed
         bytes32 positionKey = keccak256(abi.encodePacked(address(this), params.tick));
-        (, , uint128 tokensOwed) = pool.positions(positionKey);
+        (,, uint128 tokensOwed) = pool.positions(positionKey);
         assertTrue(tokensOwed > 0, "should have tokens owed");
 
         // Record balances before collect
@@ -429,7 +415,7 @@ contract OrbitalPoolTest is Test {
         assertEq(token3.balanceOf(address(this)) - balance3Before, expectedPerToken, "token3 collect");
 
         // Check tokensOwed is now zero
-        (, , uint128 tokensOwedAfter) = pool.positions(positionKey);
+        (,, uint128 tokensOwedAfter) = pool.positions(positionKey);
         assertEq(tokensOwedAfter, 0, "tokens owed should be zero");
     }
 
@@ -443,7 +429,7 @@ contract OrbitalPoolTest is Test {
             currentTick: 0,
             tick: 2000,
             radius: 1000e18,
-            currentSumReserves: 0,  // Pool starts empty
+            currentSumReserves: 0, // Pool starts empty
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
@@ -454,7 +440,7 @@ contract OrbitalPoolTest is Test {
         pool.burn(params.tick, params.radius);
 
         bytes32 positionKey = keccak256(abi.encodePacked(address(this), params.tick));
-        (, , uint128 tokensOwed) = pool.positions(positionKey);
+        (,, uint128 tokensOwed) = pool.positions(positionKey);
 
         // Collect only half
         uint128 requestAmount = tokensOwed / 2;
@@ -462,7 +448,7 @@ contract OrbitalPoolTest is Test {
         assertEq(amountCollected, requestAmount, "should collect requested amount");
 
         // Check tokensOwed was reduced but not zero
-        (, , uint128 tokensOwedAfter) = pool.positions(positionKey);
+        (,, uint128 tokensOwedAfter) = pool.positions(positionKey);
         assertEq(tokensOwedAfter, tokensOwed - requestAmount, "remaining tokens owed");
     }
 
@@ -476,7 +462,7 @@ contract OrbitalPoolTest is Test {
             currentTick: 0,
             tick: 2000,
             radius: 1000e18,
-            currentSumReserves: 0,  // Pool starts empty
+            currentSumReserves: 0, // Pool starts empty
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
@@ -495,7 +481,7 @@ contract OrbitalPoolTest is Test {
 
         // Check position has fees accumulated
         bytes32 positionKey = keccak256(abi.encodePacked(address(this), params.tick));
-        (, , uint128 tokensOwed) = pool.positions(positionKey);
+        (,, uint128 tokensOwed) = pool.positions(positionKey);
 
         // tokensOwed should be > 0 from swap fees
         assertTrue(tokensOwed > 0, "should have fee tokens owed");

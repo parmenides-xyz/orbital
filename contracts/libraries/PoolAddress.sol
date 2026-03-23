@@ -11,11 +11,11 @@ library PoolAddress {
     /// @param tokens Array of token addresses (must be sorted)
     /// @param tickSpacing The tick spacing
     /// @return pool The computed pool address
-    function computeAddress(
-        address factory,
-        address[] memory tokens,
-        int24 tickSpacing
-    ) internal pure returns (address pool) {
+    function computeAddress(address factory, address[] memory tokens, int24 tickSpacing)
+        internal
+        pure
+        returns (address pool)
+    {
         // Verify tokens are sorted
         for (uint256 i = 1; i < tokens.length; i++) {
             require(tokens[i - 1] < tokens[i], "tokens not sorted");

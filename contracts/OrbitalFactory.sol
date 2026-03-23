@@ -4,12 +4,10 @@ pragma solidity ^0.8.26;
 import "./OrbitalPool.sol";
 
 interface IOrbitalPoolDeployer {
-    function parameters() external view returns (
-        address factory,
-        address[] memory tokens,
-        int24 tickSpacing,
-        uint24 fee
-    );
+    function parameters()
+        external
+        view
+        returns (address factory, address[] memory tokens, int24 tickSpacing, uint24 fee);
 }
 
 contract OrbitalFactory is IOrbitalPoolDeployer {
@@ -35,16 +33,15 @@ contract OrbitalFactory is IOrbitalPoolDeployer {
     error UnsupportedFee();
 
     constructor() {
-        fees[500] = 10;   // 0.05% fee -> tick spacing 10 (stablecoins)
-        fees[3000] = 60;  // 0.3% fee -> tick spacing 60 (volatile pairs)
+        fees[500] = 10; // 0.05% fee -> tick spacing 10 (stablecoins)
+        fees[3000] = 60; // 0.3% fee -> tick spacing 60 (volatile pairs)
     }
 
-    function parameters() external view returns (
-        address factory,
-        address[] memory tokens,
-        int24 tickSpacing,
-        uint24 fee
-    ) {
+    function parameters()
+        external
+        view
+        returns (address factory, address[] memory tokens, int24 tickSpacing, uint24 fee)
+    {
         return (_factory, _tokens, _tickSpacing, _fee);
     }
 
@@ -52,10 +49,7 @@ contract OrbitalFactory is IOrbitalPoolDeployer {
     /// @param tokens Array of token addresses (will be sorted)
     /// @param fee The fee amount (500 = 0.05%, 3000 = 0.3%)
     /// @return pool Address of the created pool
-    function createPool(
-        address[] memory tokens,
-        uint24 fee
-    ) public returns (address pool) {
+    function createPool(address[] memory tokens, uint24 fee) public returns (address pool) {
         // Validate fee and get tick spacing
         int24 tickSpacing = fees[fee];
         if (tickSpacing == 0) revert UnsupportedFee();
@@ -83,9 +77,7 @@ contract OrbitalFactory is IOrbitalPoolDeployer {
         _fee = fee;
 
         // Deploy pool with CREATE2
-        pool = address(
-            new OrbitalPool{salt: salt}()
-        );
+        pool = address(new OrbitalPool{salt: salt}());
 
         // Clean up parameters
         delete _factory;
@@ -103,10 +95,7 @@ contract OrbitalFactory is IOrbitalPoolDeployer {
     /// @param tokens Array of token addresses (will be sorted)
     /// @param fee The fee amount
     /// @return pool Address of the pool (or zero if not exists)
-    function getPool(
-        address[] memory tokens,
-        uint24 fee
-    ) public view returns (address pool) {
+    function getPool(address[] memory tokens, uint24 fee) public view returns (address pool) {
         tokens = sortTokens(tokens);
         bytes32 salt = keccak256(abi.encodePacked(tokens, fee));
         return pools[salt];

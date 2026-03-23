@@ -7,7 +7,6 @@ pragma solidity ^0.8.26;
 /// Unlike Uniswap V3 which uses tokenIn + tickSpacing + tokenOut, Orbital pools have n tokens
 /// so we use pool addresses directly instead of deriving them.
 library Path {
-
     /// @dev The length of a bytes encoded address
     uint256 private constant ADDR_SIZE = 20;
 
@@ -59,11 +58,7 @@ library Path {
     function decodeFirstPool(bytes memory path)
         internal
         pure
-        returns (
-            address tokenIn,
-            address pool,
-            address tokenOut
-        )
+        returns (address tokenIn, address pool, address tokenOut)
     {
         tokenIn = toAddress(path, 0);
         pool = toAddress(path, ADDR_SIZE);
@@ -73,11 +68,7 @@ library Path {
     // ============ Bytes Utilities ============
 
     /// @notice Extracts an address from bytes at a given offset
-    function toAddress(bytes memory _bytes, uint256 _start)
-        internal
-        pure
-        returns (address)
-    {
+    function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
         require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
         address tempAddress;
 
@@ -89,11 +80,7 @@ library Path {
     }
 
     /// @notice Extracts a slice from bytes
-    function slice(
-        bytes memory _bytes,
-        uint256 _start,
-        uint256 _length
-    ) internal pure returns (bytes memory) {
+    function slice(bytes memory _bytes, uint256 _start, uint256 _length) internal pure returns (bytes memory) {
         require(_bytes.length >= _start + _length, "slice_outOfBounds");
 
         bytes memory tempBytes;

@@ -24,10 +24,7 @@ library TickBitmap {
     /// since ticks are nested and all share the equal-price point as their center.
     /// @param self The mapping in which to flip the tick
     /// @param tick The tick to flip
-    function flipTick(
-        mapping(int16 => uint256) storage self,
-        int24 tick
-    ) internal {
+    function flipTick(mapping(int16 => uint256) storage self, int24 tick) internal {
         (int16 wordPos, uint8 bitPos) = position(tick);
         uint256 mask = 1 << bitPos;
         self[wordPos] ^= mask;
@@ -42,11 +39,11 @@ library TickBitmap {
     /// @param lte Whether to search for the next initialized tick to the left (lower)
     /// @return next The next initialized tick (or boundary of the word)
     /// @return initialized Whether the next tick is initialized
-    function nextInitializedTickWithinOneWord(
-        mapping(int16 => uint256) storage self,
-        int24 tick,
-        bool lte
-    ) internal view returns (int24 next, bool initialized) {
+    function nextInitializedTickWithinOneWord(mapping(int16 => uint256) storage self, int24 tick, bool lte)
+        internal
+        view
+        returns (int24 next, bool initialized)
+    {
         int24 compressed = tick;
 
         if (lte) {

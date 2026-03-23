@@ -18,10 +18,7 @@ library OrbitalMath {
     /// @param rDelta The radius being added
     /// @param n The number of tokens in the pool
     /// @return amount The amount of each token needed
-    function calcAmountPerToken(
-        uint128 rDelta,
-        uint256 n
-    ) internal pure returns (uint256 amount) {
+    function calcAmountPerToken(uint128 rDelta, uint256 n) internal pure returns (uint256 amount) {
         // sqrtN = √n (in WAD)
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
 
@@ -40,10 +37,7 @@ library OrbitalMath {
     /// @param radius The total radius
     /// @param n The number of tokens in the pool
     /// @return reserve The reserve of each token at equal-price point
-    function calcEqualPriceReserve(
-        uint128 radius,
-        uint256 n
-    ) internal pure returns (uint256 reserve) {
+    function calcEqualPriceReserve(uint128 radius, uint256 n) internal pure returns (uint256 reserve) {
         reserve = calcAmountPerToken(radius, n);
     }
 
@@ -52,10 +46,7 @@ library OrbitalMath {
     /// @param amount The token amount
     /// @param n The number of tokens in the pool
     /// @return radius The radius that corresponds to this amount
-    function calcRadiusForAmount(
-        uint256 amount,
-        uint256 n
-    ) internal pure returns (uint128 radius) {
+    function calcRadiusForAmount(uint256 amount, uint256 n) internal pure returns (uint128 radius) {
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
         uint256 invSqrtN = WAD.mulDivDown(WAD, sqrtN);
         uint256 factor = WAD - invSqrtN;
@@ -66,9 +57,7 @@ library OrbitalMath {
     /// @dev Like Uniswap V3's getLiquidityForAmounts, picks the limiting factor
     /// @param amounts Array of token amounts
     /// @return radius The maximum radius that can be provided with these amounts
-    function calcRadiusForAmounts(
-        uint256[] memory amounts
-    ) internal pure returns (uint128 radius) {
+    function calcRadiusForAmounts(uint256[] memory amounts) internal pure returns (uint128 radius) {
         require(amounts.length > 0, "Empty amounts");
         uint256 minAmount = amounts[0];
         for (uint256 i = 1; i < amounts.length; i++) {
@@ -84,10 +73,7 @@ library OrbitalMath {
     /// @param sumReserves The sum of all reserves (Σxᵢ)
     /// @param n The number of tokens
     /// @return alpha The projection value
-    function calcAlpha(
-        uint256 sumReserves,
-        uint256 n
-    ) internal pure returns (uint256 alpha) {
+    function calcAlpha(uint256 sumReserves, uint256 n) internal pure returns (uint256 alpha) {
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
         alpha = sumReserves.mulDivDown(WAD, sqrtN);
     }
@@ -114,7 +100,7 @@ library OrbitalMath {
     /// @return kNormMin The minimum valid k^norm value (in WAD)
     function kNormMin(uint256 n) internal pure returns (uint256) {
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
-        return sqrtN - WAD;  // √n - 1
+        return sqrtN - WAD; // √n - 1
     }
 
     /// @notice Calculates k^norm_max = (n-1)/√n (maximum valid normalized boundary)
@@ -123,7 +109,7 @@ library OrbitalMath {
     /// @return kNormMax The maximum valid k^norm value (in WAD)
     function kNormMax(uint256 n) internal pure returns (uint256) {
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
-        return ((n - 1) * WAD).mulDivDown(WAD, sqrtN);  // (n-1)/√n
+        return ((n - 1) * WAD).mulDivDown(WAD, sqrtN); // (n-1)/√n
     }
 
     /// @notice Validates that a tick's k^norm is within valid bounds for n tokens
@@ -137,11 +123,7 @@ library OrbitalMath {
     }
 
     /// @notice Calculates the sum of reserves S at which α^norm = k^norm
-    function calcSumReservesAtTick(
-        int24 tick,
-        uint256 radius,
-        uint256 n
-    ) internal pure returns (uint256 sumReserves) {
+    function calcSumReservesAtTick(int24 tick, uint256 radius, uint256 n) internal pure returns (uint256 sumReserves) {
         uint256 kNorm = tickToKNorm(tick);
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
         sumReserves = kNorm.mulWadDown(radius).mulWadDown(sqrtN);
@@ -155,16 +137,12 @@ library OrbitalMath {
     /// @param n The number of tokens
     /// @return k The tick's unnormalized k value (k = k^norm * r)
     /// @return s The boundary s value
-    function calcBoundaryKS(
-        int24 tick,
-        uint256 radius,
-        uint256 n
-    ) internal pure returns (uint256 k, uint256 s) {
+    function calcBoundaryKS(int24 tick, uint256 radius, uint256 n) internal pure returns (uint256 k, uint256 s) {
         uint256 kNorm = tickToKNorm(tick);
-        k = kNorm.mulWadDown(radius);  // k = k^norm * r (unnormalized)
+        k = kNorm.mulWadDown(radius); // k = k^norm * r (unnormalized)
 
         uint256 sqrtN = FixedPointMathLib.sqrt(n * WAD * WAD);
-        uint256 rSqrtN = radius.mulWadDown(sqrtN);  // r√n
+        uint256 rSqrtN = radius.mulWadDown(sqrtN); // r√n
         uint256 diff = k > rSqrtN ? k - rSqrtN : rSqrtN - k;
         uint256 diffSquared = diff.mulWadDown(diff);
         uint256 rSquared = radius.mulWadDown(radius);
@@ -289,15 +267,7 @@ library OrbitalMath {
         uint256 amountRemaining,
         uint256 k,
         uint256 s
-    )
-        internal
-        pure
-        returns (
-            uint256 sumReservesNext,
-            uint256 amountIn,
-            uint256 amountOut
-        )
-    {
+    ) internal pure returns (uint256 sumReservesNext, uint256 amountIn, uint256 amountOut) {
         uint256 sumAfterIn = sumReservesCurrent + amountRemaining;
         uint256 sumSqAfterIn = sumSquaredReserves + 2 * amountRemaining * balanceIn + amountRemaining * amountRemaining;
 
@@ -373,21 +343,11 @@ library OrbitalMath {
         amountIn = amountRemaining;
 
         bool increasing = sumReservesCurrent <= sumReservesTarget;
-        bool crossesBoundary = increasing
-            ? sumReservesNext > sumReservesTarget
-            : sumReservesNext < sumReservesTarget;
+        bool crossesBoundary = increasing ? sumReservesNext > sumReservesTarget : sumReservesNext < sumReservesTarget;
 
         if (crossesBoundary) {
             (amountIn, amountOut) = calcAmountToTarget(
-                n,
-                sumReservesCurrent,
-                sumReservesTarget,
-                radius,
-                sumSquaredReserves,
-                balanceIn,
-                balanceOut,
-                k,
-                s
+                n, sumReservesCurrent, sumReservesTarget, radius, sumSquaredReserves, balanceIn, balanceOut, k, s
             );
             sumReservesNext = sumReservesTarget;
         }

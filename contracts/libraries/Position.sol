@@ -21,16 +21,10 @@ library Position {
     /// @param self The position to update
     /// @param rDelta The change in radius (positive for add, negative for remove)
     /// @param feeGrowthInsideX128 Current fee growth inside the position's boundary
-    function update(
-        Info storage self,
-        int128 rDelta,
-        uint256 feeGrowthInsideX128
-    ) internal {
+    function update(Info storage self, int128 rDelta, uint256 feeGrowthInsideX128) internal {
         // Calculate tokens owed from fee growth since last update
         // tokensOwed = (feeGrowthInside - feeGrowthInsideLast) * r / Q128
-        uint128 tokensOwed = uint128(
-            ((feeGrowthInsideX128 - self.feeGrowthInsideLastX128) * self.r) / Q128
-        );
+        uint128 tokensOwed = uint128(((feeGrowthInsideX128 - self.feeGrowthInsideLastX128) * self.r) / Q128);
 
         // Update radius (handle both add and remove)
         if (rDelta < 0) {
@@ -48,11 +42,11 @@ library Position {
         }
     }
 
-    function get(
-        mapping(bytes32 => Info) storage self,
-        address owner,
-        int24 tick
-    ) internal view returns (Position.Info storage position) {
+    function get(mapping(bytes32 => Info) storage self, address owner, int24 tick)
+        internal
+        view
+        returns (Position.Info storage position)
+    {
         position = self[keccak256(abi.encodePacked(owner, tick))];
     }
 }

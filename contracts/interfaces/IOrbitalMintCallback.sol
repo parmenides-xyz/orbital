@@ -2,8 +2,5 @@
 pragma solidity ^0.8.26;
 
 interface IOrbitalMintCallback {
-    function orbitalMintCallback(
-        uint256[] memory amounts,
-        bytes calldata data
-    ) external;
+    function orbitalMintCallback(uint256[] memory amounts, bytes calldata data) external;
 }

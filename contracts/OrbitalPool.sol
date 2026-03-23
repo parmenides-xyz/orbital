@@ -74,11 +74,7 @@ contract OrbitalPool {
     function initialize(uint128 initialSumReserves, int24 tick) public {
         if (slot0.initialized) revert AlreadyInitialized();
 
-        slot0 = Slot0({
-            sumReserves: initialSumReserves,
-            tick: tick,
-            initialized: true
-        });
+        slot0 = Slot0({sumReserves: initialSumReserves, tick: tick, initialized: true});
 
         uint256 n = tokens.length;
         uint256 S = initialSumReserves;
@@ -90,27 +86,11 @@ contract OrbitalPool {
     error InsufficientInputAmount();
     error InsufficientPosition();
 
-    event Mint(
-        address sender,
-        address indexed owner,
-        int24 indexed tick,
-        uint128 amount,
-        uint256[] amounts
-    );
+    event Mint(address sender, address indexed owner, int24 indexed tick, uint128 amount, uint256[] amounts);
 
-    event Burn(
-        address indexed owner,
-        int24 indexed tick,
-        uint128 amount,
-        uint256[] amounts
-    );
+    event Burn(address indexed owner, int24 indexed tick, uint128 amount, uint256[] amounts);
 
-    event Collect(
-        address indexed owner,
-        address recipient,
-        int24 indexed tick,
-        uint128 amount
-    );
+    event Collect(address indexed owner, address recipient, int24 indexed tick, uint128 amount);
 
     struct ModifyPositionParams {
         address owner;
@@ -120,29 +100,21 @@ contract OrbitalPool {
 
     /// @notice Internal function to modify a position (add or remove liquidity)
     /// @dev Used by both mint() and burn()
-    function _modifyPosition(
-        ModifyPositionParams memory params
-    ) internal returns (Position.Info storage position, int256[] memory amounts) {
+    function _modifyPosition(ModifyPositionParams memory params)
+        internal
+        returns (Position.Info storage position, int256[] memory amounts)
+    {
         if (!OrbitalMath.isValidTick(params.tick, tokens.length)) revert InvalidTickRange();
 
         Slot0 memory slot0_ = slot0;
 
-        bool flipped = ticks.update(
-            params.tick,
-            params.rDelta,
-            slot0_.tick,
-            feeGrowthGlobalX128
-        );
+        bool flipped = ticks.update(params.tick, params.rDelta, slot0_.tick, feeGrowthGlobalX128);
 
         if (flipped) {
             tickBitmap.flipTick(params.tick);
         }
 
-        uint256 feeGrowthInsideX128 = ticks.getFeeGrowthInside(
-            params.tick,
-            slot0_.tick,
-            feeGrowthGlobalX128
-        );
+        uint256 feeGrowthInsideX128 = ticks.getFeeGrowthInside(params.tick, slot0_.tick, feeGrowthGlobalX128);
 
         position = positions.get(params.owner, params.tick);
         position.update(params.rDelta, feeGrowthInsideX128);
@@ -168,11 +140,7 @@ contract OrbitalPool {
                 r += uint128(params.rDelta);
             }
         } else {
-            (uint256 kDelta, uint256 sDelta) = OrbitalMath.calcBoundaryKS(
-                params.tick,
-                absRDelta,
-                tokens.length
-            );
+            (uint256 kDelta, uint256 sDelta) = OrbitalMath.calcBoundaryKS(params.tick, absRDelta, tokens.length);
             if (params.rDelta < 0) {
                 kBound = kBound > kDelta ? kBound - kDelta : 0;
                 sBound = sBound > sDelta ? sBound - sDelta : 0;
@@ -183,21 +151,14 @@ contract OrbitalPool {
         }
     }
 
-    function mint(
-        address owner,
-        int24 tick,
-        uint128 amount,
-        bytes calldata data
-    ) external returns (uint256[] memory amounts) {
+    function mint(address owner, int24 tick, uint128 amount, bytes calldata data)
+        external
+        returns (uint256[] memory amounts)
+    {
         if (amount == 0) revert ZeroRadius();
 
-        (, int256[] memory amountsInt) = _modifyPosition(
-            ModifyPositionParams({
-                owner: owner,
-                tick: tick,
-                rDelta: int128(uint128(amount))
-            })
-        );
+        (, int256[] memory amountsInt) =
+            _modifyPosition(ModifyPositionParams({owner: owner, tick: tick, rDelta: int128(uint128(amount))}));
 
         amounts = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -212,11 +173,12 @@ contract OrbitalPool {
         IOrbitalMintCallback(msg.sender).orbitalMintCallback(amounts, data);
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (amounts[i] > 0 && balancesBefore[i] + amounts[i] > balance(i))
+            if (amounts[i] > 0 && balancesBefore[i] + amounts[i] > balance(i)) {
                 revert InsufficientInputAmount();
+            }
         }
 
-        uint256 a = amounts[0];  // All amounts equal in Orbital
+        uint256 a = amounts[0]; // All amounts equal in Orbital
         uint256 n = tokens.length;
         uint256 oldS = slot0.sumReserves;
         slot0.sumReserves = uint128(oldS + n * a);
@@ -229,17 +191,9 @@ contract OrbitalPool {
     /// @param tick The position's boundary tick
     /// @param amount The amount of radius to remove
     /// @return amounts The token amounts removed (added to tokensOwed)
-    function burn(
-        int24 tick,
-        uint128 amount
-    ) external returns (uint256[] memory amounts) {
-        (Position.Info storage position, int256[] memory amountsInt) = _modifyPosition(
-            ModifyPositionParams({
-                owner: msg.sender,
-                tick: tick,
-                rDelta: -int128(uint128(amount))
-            })
-        );
+    function burn(int24 tick, uint128 amount) external returns (uint256[] memory amounts) {
+        (Position.Info storage position, int256[] memory amountsInt) =
+            _modifyPosition(ModifyPositionParams({owner: msg.sender, tick: tick, rDelta: -int128(uint128(amount))}));
 
         amounts = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -258,16 +212,10 @@ contract OrbitalPool {
     /// @param tick The position's boundary tick
     /// @param amountRequested Maximum amount to collect
     /// @return amount The actual amount collected
-    function collect(
-        address recipient,
-        int24 tick,
-        uint128 amountRequested
-    ) external returns (uint128 amount) {
+    function collect(address recipient, int24 tick, uint128 amountRequested) external returns (uint128 amount) {
         Position.Info storage position = positions.get(msg.sender, tick);
 
-        amount = amountRequested > position.tokensOwed
-            ? position.tokensOwed
-            : amountRequested;
+        amount = amountRequested > position.tokensOwed ? position.tokensOwed : amountRequested;
 
         if (amount > 0) {
             position.tokensOwed -= amount;
@@ -337,42 +285,29 @@ contract OrbitalPool {
         bool lte = balanceIn < balanceOut;
 
         if (sumReservesLimit != 0) {
-            if (
-                lte
-                    ? sumReservesLimit > uint128(state.sumReserves)
-                    : sumReservesLimit < uint128(state.sumReserves)
-            ) revert InvalidSumReservesLimit();
+            if (lte ? sumReservesLimit > uint128(state.sumReserves) : sumReservesLimit < uint128(state.sumReserves)) {
+                revert InvalidSumReservesLimit();
+            }
         }
 
         while (
-            state.amountSpecifiedRemaining > 0 &&
-            (sumReservesLimit == 0 || uint128(state.sumReserves) != sumReservesLimit)
+            state.amountSpecifiedRemaining > 0
+                && (sumReservesLimit == 0 || uint128(state.sumReserves) != sumReservesLimit)
         ) {
             StepState memory step;
 
             step.sumReservesStart = state.sumReserves;
 
-            (step.nextTick, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(
-                state.tick,
-                lte
-            );
+            (step.nextTick, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(state.tick, lte);
 
-            uint256 sumReservesTarget = OrbitalMath.calcSumReservesAtTick(
-                step.nextTick,
-                state.r,
-                tokens.length
-            );
+            uint256 sumReservesTarget = OrbitalMath.calcSumReservesAtTick(step.nextTick, state.r, tokens.length);
 
             uint256 amountRemainingLessFee = (state.amountSpecifiedRemaining * (1e6 - fee)) / 1e6;
 
             (step.sumReservesNext, step.amountIn, step.amountOut) = OrbitalMath.computeSwapStep(
                 tokens.length,
                 state.sumReserves,
-                (
-                    lte
-                        ? sumReservesTarget < sumReservesLimit
-                        : sumReservesTarget > sumReservesLimit
-                )
+                (lte ? sumReservesTarget < sumReservesLimit : sumReservesTarget > sumReservesLimit)
                     ? sumReservesLimit
                     : sumReservesTarget,
                 state.r,
@@ -398,8 +333,7 @@ contract OrbitalPool {
             state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount);
             state.amountCalculated += step.amountOut;
 
-            sumSquaredReserves_ = sumSquaredReserves_
-                + 2 * step.amountIn * balanceIn + step.amountIn * step.amountIn
+            sumSquaredReserves_ = sumSquaredReserves_ + 2 * step.amountIn * balanceIn + step.amountIn * step.amountIn
                 - 2 * step.amountOut * balanceOut + step.amountOut * step.amountOut;
 
             balanceIn += step.amountIn;
@@ -410,11 +344,7 @@ contract OrbitalPool {
                 if (step.initialized) {
                     uint128 rDelta = ticks.cross(step.nextTick, state.feeGrowthGlobalX128);
 
-                    (uint256 kDelta, uint256 sDelta) = OrbitalMath.calcBoundaryKS(
-                        step.nextTick,
-                        rDelta,
-                        tokens.length
-                    );
+                    (uint256 kDelta, uint256 sDelta) = OrbitalMath.calcBoundaryKS(step.nextTick, rDelta, tokens.length);
 
                     if (lte) {
                         state.r = state.r + rDelta;
@@ -454,26 +384,13 @@ contract OrbitalPool {
         IERC20(tokens[tokenOutIndex]).transfer(recipient, uint256(-amountOut));
 
         uint256 balanceBefore = balance(tokenInIndex);
-        IOrbitalSwapCallback(msg.sender).orbitalSwapCallback(
-            tokenInIndex,
-            tokenOutIndex,
-            amountIn,
-            amountOut,
-            data
-        );
-        if (balanceBefore + uint256(amountIn) > balance(tokenInIndex))
+        IOrbitalSwapCallback(msg.sender).orbitalSwapCallback(tokenInIndex, tokenOutIndex, amountIn, amountOut, data);
+        if (balanceBefore + uint256(amountIn) > balance(tokenInIndex)) {
             revert InsufficientInputAmount();
+        }
 
         emit Swap(
-            msg.sender,
-            recipient,
-            tokenInIndex,
-            tokenOutIndex,
-            amountIn,
-            amountOut,
-            slot0.sumReserves,
-            r,
-            slot0.tick
+            msg.sender, recipient, tokenInIndex, tokenOutIndex, amountIn, amountOut, slot0.sumReserves, r, slot0.tick
         );
     }
 
@@ -484,10 +401,7 @@ contract OrbitalPool {
     /// @notice Flash loan: borrow tokens and repay in same transaction
     /// @param amounts Array of amounts to borrow for each token
     /// @param data Arbitrary data passed to callback
-    function flash(
-        uint256[] calldata amounts,
-        bytes calldata data
-    ) public {
+    function flash(uint256[] calldata amounts, bytes calldata data) public {
         uint256[] memory balancesBefore = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
             balancesBefore[i] = balance(i);

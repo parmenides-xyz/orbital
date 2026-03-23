@@ -50,11 +50,10 @@ library Tick {
     /// @param tick The tick being crossed
     /// @param feeGrowthGlobalX128 Current global fee growth
     /// @return rNet The radius to add/subtract
-    function cross(
-        mapping(int24 => Tick.Info) storage self,
-        int24 tick,
-        uint256 feeGrowthGlobalX128
-    ) internal returns (uint128 rNet) {
+    function cross(mapping(int24 => Tick.Info) storage self, int24 tick, uint256 feeGrowthGlobalX128)
+        internal
+        returns (uint128 rNet)
+    {
         Tick.Info storage info = self[tick];
 
         info.feeGrowthOutsideX128 = feeGrowthGlobalX128 - info.feeGrowthOutsideX128;
