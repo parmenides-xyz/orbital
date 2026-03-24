@@ -1,5 +1,5 @@
 {
-  "name": "@zorbital/orbital-core",
+  "name": "@orbital-amm/orbital-core",
   "version": "0.1.0",
   "description": "Core smart contracts for the Orbital protocol",
   "license": "GPL-2.0-or-later",
